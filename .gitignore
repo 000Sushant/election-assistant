@@ -1,14 +1,27 @@
-# Secrets
+# Secrets (Comprehensive)
 .env
+**/.env
+service-account.json
+**/service-account.json
 *.json
-!package.json
-!package-lock.json
-!tsconfig.json
+**/*.json
 
-# Dependencies
+# Exceptions (Do NOT ignore these)
+!package.json
+!**/package.json
+!package-lock.json
+!**/package-lock.json
+!tsconfig.json
+!**/tsconfig.json
+!angular.json
+
+# Dependencies & Builds
 node_modules/
+**/node_modules/
 dist/
+**/dist/
 .angular/
+**/.angular/
 
 # OS files
 .DS_Store

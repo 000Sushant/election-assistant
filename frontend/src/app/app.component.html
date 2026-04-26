@@ -1,0 +1,34 @@
+<div class="app-layout">
+  <app-header></app-header>
+  
+  <div class="main-shell">
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-section">
+        <h3>📅 Upcoming Elections 2026</h3>
+        
+        @if (isLoadingElections) {
+          <p class="loading-text">Fetching latest schedule...</p>
+        } @else {
+          <ul class="election-list">
+            @for (election of upcomingElections; track election.state) {
+              <li>
+                <span class="state">{{ election.state }}</span>
+                <span class="date">{{ election.date }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <div class="sidebar-section fact-card">
+        <h3>✨ Did You Know?</h3>
+        <p class="fact-text">{{ currentFact.text }}</p>
+        <button class="know-more-btn" (click)="askAboutFact()">Know More →</button>
+      </div>
+    </aside>
+
+    <main class="chat-main">
+      <app-chat-window></app-chat-window>
+    </main>
+  </div>
+</div>

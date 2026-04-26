@@ -1,0 +1,92 @@
+<div class="chat-container">
+  <div class="messages-area" #scrollContainer>
+    
+    <!-- Votika Welcome Screen -->
+    @if (messages.length === 0) {
+      <div class="welcome-screen">
+        <div class="welcome-header">
+          <div class="welcome-avatar">
+            <img src="assets/votika.png" alt="Votika">
+          </div>
+          <h2>Greetings, I am Votika</h2>
+          <p>It is a pleasure to guide you through India's democratic process. How may I assist you today?</p>
+        </div>
+        <div class="quick-cards">
+          <button class="quick-card" (click)="sendMessage('How do I register to vote?')">
+            <span class="icon">📝</span>
+            <div class="card-content">
+              <h4>Voter Registration</h4>
+              <p>Gracefully navigate the registration process</p>
+            </div>
+          </button>
+          <button class="quick-card" (click)="sendMessage('Explain EVM and VVPAT')">
+            <span class="icon">🗳️</span>
+            <div class="card-content">
+              <h4>EVM & VVPAT</h4>
+              <p>Understand the integrity of your vote</p>
+            </div>
+          </button>
+          <button class="quick-card" (click)="sendMessage('What is the process for Candidate Nomination?')">
+            <span class="icon">👤</span>
+            <div class="card-content">
+              <h4>Nominations</h4>
+              <p>Learn about candidate eligibility</p>
+            </div>
+          </button>
+          <button class="quick-card" (click)="sendMessage('How does the counting and results process work?')">
+            <span class="icon">📈</span>
+            <div class="card-content">
+              <h4>Results</h4>
+              <p>The journey to the final outcome</p>
+            </div>
+          </button>
+        </div>
+      </div>
+    }
+
+    @for (msg of messages; track $index) {
+      <div class="message-wrapper" [class.user]="msg.role === 'user'">
+        <div class="avatar-container" *ngIf="msg.role === 'model'">
+          <img src="assets/votika.png" alt="Votika" class="votika-msg-avatar">
+        </div>
+        <div class="message-bubble" [innerHTML]="formatMessage(msg.parts[0].text)"></div>
+      </div>
+    }
+    
+    @if (isLoading) {
+      <div class="message-wrapper">
+        <div class="avatar-container">
+          <img src="assets/votika.png" alt="Votika" class="votika-msg-avatar loading">
+        </div>
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    }
+
+    @if (!isLoading && messages.length > 0 && messages[messages.length-1].role === 'model') {
+      <div class="quick-replies">
+        @for (reply of currentQuickReplies; track reply) {
+          <button class="quick-reply-btn" (click)="sendMessage(reply)">{{ reply }}</button>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="input-area">
+    <div class="input-wrapper">
+      <input 
+        type="text" 
+        [(ngModel)]="userInput" 
+        (keyup.enter)="sendMessage()" 
+        placeholder="Share your question with Votika..."
+        [disabled]="isLoading"
+      >
+      <button class="send-btn" (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

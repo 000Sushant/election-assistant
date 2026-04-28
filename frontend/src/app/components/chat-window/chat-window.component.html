@@ -74,7 +74,7 @@
     @if (!isLoading && messages.length > 0 && messages[messages.length-1].role === 'model') {
       <div class="quick-replies">
         @for (reply of currentQuickReplies; track reply) {
-          <button class="quick-reply-btn" (click)="sendMessage(reply)" aria-label="Quick reply: {{ reply }}">{{ reply }}</button>
+          <button class="quick-reply-btn" (click)="sendMessage(reply)" [attr.aria-label]="'Quick reply: ' + reply">{{ reply }}</button>
         }
       </div>
     }

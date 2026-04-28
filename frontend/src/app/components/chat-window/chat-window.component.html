@@ -12,28 +12,28 @@
           <p>It is a pleasure to guide you through India's democratic process. How may I assist you today?</p>
         </div>
         <div class="quick-cards">
-          <button class="quick-card" (click)="sendMessage('How do I register to vote?')">
+          <button class="quick-card" (click)="sendMessage('How do I register to vote?')" aria-label="Ask about voter registration">
             <span class="icon">📝</span>
             <div class="card-content">
               <h4>Voter Registration</h4>
               <p>Gracefully navigate the registration process</p>
             </div>
           </button>
-          <button class="quick-card" (click)="sendMessage('Explain EVM and VVPAT')">
+          <button class="quick-card" (click)="sendMessage('Explain EVM and VVPAT')" aria-label="Ask about EVM and VVPAT machines">
             <span class="icon">🗳️</span>
             <div class="card-content">
               <h4>EVM & VVPAT</h4>
               <p>Understand the integrity of your vote</p>
             </div>
           </button>
-          <button class="quick-card" (click)="sendMessage('What is the process for Candidate Nomination?')">
+          <button class="quick-card" (click)="sendMessage('What is the process for Candidate Nomination?')" aria-label="Ask about candidate nomination process">
             <span class="icon">👤</span>
             <div class="card-content">
               <h4>Nominations</h4>
               <p>Learn about candidate eligibility</p>
             </div>
           </button>
-          <button class="quick-card" (click)="sendMessage('How does the counting and results process work?')">
+          <button class="quick-card" (click)="sendMessage('How does the counting and results process work?')" aria-label="Ask about election counting and results">
             <span class="icon">📈</span>
             <div class="card-content">
               <h4>Results</h4>
@@ -49,7 +49,14 @@
         <div class="avatar-container" *ngIf="msg.role === 'model'">
           <img src="assets/votika.png" alt="Votika" class="votika-msg-avatar">
         </div>
-        <div class="message-bubble" [innerHTML]="formatMessage(msg.parts[0].text)"></div>
+        <div class="message-content">
+          <div class="message-bubble" [innerHTML]="formatMessage(msg.parts[0].text)"></div>
+          <button *ngIf="msg.role === 'model'" class="listen-btn" (click)="playHindiAudio(msg.parts[0].text, $index)" [disabled]="audioLoadingIndex === $index" aria-label="Listen to this message in Hindi or Pause">
+            <span *ngIf="audioLoadingIndex !== $index && audioPlayingIndex !== $index">🔊 Listen in Hindi</span>
+            <span *ngIf="audioLoadingIndex === $index">⏳ Translating...</span>
+            <span *ngIf="audioPlayingIndex === $index">⏸️ Pause Audio</span>
+          </button>
+        </div>
       </div>
     }
     
@@ -67,7 +74,7 @@
     @if (!isLoading && messages.length > 0 && messages[messages.length-1].role === 'model') {
       <div class="quick-replies">
         @for (reply of currentQuickReplies; track reply) {
-          <button class="quick-reply-btn" (click)="sendMessage(reply)">{{ reply }}</button>
+          <button class="quick-reply-btn" (click)="sendMessage(reply)" aria-label="Quick reply: {{ reply }}">{{ reply }}</button>
         }
       </div>
     }
@@ -81,8 +88,9 @@
         (keyup.enter)="sendMessage()" 
         placeholder="Share your question with Votika..."
         [disabled]="isLoading"
+        aria-label="Chat input field"
       >
-      <button class="send-btn" (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading">
+      <button class="send-btn" (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading" aria-label="Send message">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" />
         </svg>

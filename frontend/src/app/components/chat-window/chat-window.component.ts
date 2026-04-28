@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewChecked, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatService, ChatMessage } from '../../services/chat.service';
@@ -12,13 +12,16 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   templateUrl: './chat-window.component.html',
   styleUrl: './chat-window.component.scss'
 })
-export class ChatWindowComponent implements AfterViewChecked, OnInit {
+export class ChatWindowComponent implements OnInit {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   messages: ChatMessage[] = [];
   userInput: string = '';
   isLoading: boolean = false;
   currentQuickReplies: string[] = [];
+  audioLoadingIndex: number | null = null;
+  audioPlayingIndex: number | null = null;
+  currentAudio: HTMLAudioElement | null = null;
 
   constructor(
     private chatService: ChatService,
@@ -29,10 +32,6 @@ export class ChatWindowComponent implements AfterViewChecked, OnInit {
     this.chatService.messageTrigger$.subscribe(text => {
       this.sendMessage(text);
     });
-  }
-
-  ngAfterViewChecked() {
-    this.scrollToBottom();
   }
 
   sendMessage(text?: string) {
@@ -47,6 +46,7 @@ export class ChatWindowComponent implements AfterViewChecked, OnInit {
 
     this.userInput = '';
     this.isLoading = true;
+    setTimeout(() => this.scrollToBottom(), 100);
 
     this.chatService.sendMessage(messageToSend, this.messages.slice(0, -1)).subscribe({
       next: (res) => {
@@ -73,6 +73,49 @@ export class ChatWindowComponent implements AfterViewChecked, OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  async playHindiAudio(text: string, index: number) {
+    if (this.audioLoadingIndex !== null) return;
+    
+    if (this.audioPlayingIndex === index && this.currentAudio) {
+      this.currentAudio.pause();
+      this.audioPlayingIndex = null;
+      return;
+    }
+
+    this.audioLoadingIndex = index;
+    
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio = null;
+      this.audioPlayingIndex = null;
+    }
+
+    try {
+      const response = await fetch('/api/speak-hindi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      const data = await response.json();
+      
+      if (data.audio) {
+        const audioSrc = 'data:audio/mp3;base64,' + data.audio;
+        this.currentAudio = new Audio(audioSrc);
+        
+        this.currentAudio.onended = () => {
+          this.audioPlayingIndex = null;
+        };
+
+        this.currentAudio.play();
+        this.audioPlayingIndex = index;
+      }
+    } catch (err) {
+      console.error('Error fetching audio:', err);
+    } finally {
+      this.audioLoadingIndex = null;
+    }
   }
 
   /**

@@ -16,7 +16,7 @@ export interface UpcomingElection {
   providedIn: 'root'
 })
 export class ChatService {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = '/api';
   
   // New: Channel to trigger messages from the dashboard
   private messageTrigger = new Subject<string>();

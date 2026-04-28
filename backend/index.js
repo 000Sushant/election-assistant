@@ -7,6 +7,9 @@ const fs = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
 const { getFirestore } = require('firebase-admin/firestore');
+const textToSpeech = require('@google-cloud/text-to-speech');
+const { Translate } = require('@google-cloud/translate').v2;
+const compression = require('compression');
 
 dotenv.config();
 
@@ -15,43 +18,44 @@ dotenv.config();
  * This pattern supports both Local Development (file-based) 
  * and Production (environment-based), which is a key evaluation metric.
  */
-let serviceAccount;
+let serviceAccount = null;
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    // Production: Load from Environment Variable (JSON String)
     serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
     console.log('🛡️ [Security] Service Account loaded from Environment Variable');
-  } else {
-    // Local: Load from File
-    const serviceAccountPath = path.isAbsolute(process.env.GOOGLE_APPLICATION_CREDENTIALS) 
-      ? process.env.GOOGLE_APPLICATION_CREDENTIALS 
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+    const serviceAccountPath = path.isAbsolute(process.env.GOOGLE_APPLICATION_CREDENTIALS)
+      ? process.env.GOOGLE_APPLICATION_CREDENTIALS
       : path.join(__dirname, process.env.GOOGLE_APPLICATION_CREDENTIALS);
-    
     serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     console.log('🏠 [Security] Service Account loaded from local file');
+  } else {
+    console.log('☁️ [Security] Using Google Application Default Credentials (ADC)');
   }
 } catch (err) {
-  console.error('❌ [Security] Failed to load credentials:', err.message);
-  process.exit(1); // Exit if no credentials found
+  console.warn('⚠️ [Security] Failed to parse credentials, falling back to ADC:', err.message);
 }
 
 // Initialize Firebase Admin
 let db = null;
+const projectId = process.env.PROJECT_ID || (serviceAccount ? serviceAccount.project_id : 'promptwar-virtual-494507');
+
 try {
-  const appAdmin = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    projectId: serviceAccount.project_id
-  });
+  const adminConfig = serviceAccount 
+    ? { credential: admin.credential.cert(serviceAccount), projectId }
+    : { projectId };
+    
+  const appAdmin = admin.initializeApp(adminConfig);
   db = getFirestore(appAdmin);
-  console.log(`✅ [Firebase] Initialized Project: ${serviceAccount.project_id}`);
+  console.log(`✅ [Firebase] Initialized Project: ${projectId}`);
 } catch (err) {
   console.error('❌ [Firebase] Initialization Failed:', err.message);
 }
 
 // Initialize Vertex AI
 const vertexAI = new VertexAI({
-  project: serviceAccount.project_id, // Sync with service account
-  location: process.env.LOCATION || 'us-central1'
+  project: projectId,
+  location: process.env.VERTEX_REGION || 'asia-south1'
 });
 const modelName = process.env.MODEL_NAME || "gemini-1.5-flash-001";
 
@@ -63,6 +67,10 @@ const model = vertexAI.getGenerativeModel({
   model: modelName,
   systemInstruction: { parts: [{ text: systemInstruction }] }
 });
+
+// Initialize TTS and Translate Clients
+const ttsClient = new textToSpeech.TextToSpeechClient(serviceAccount ? { credentials: serviceAccount } : undefined);
+const translateClient = new Translate(serviceAccount ? { credentials: serviceAccount } : undefined);
 
 /**
  * 📦 ELECTION SERVICE (Logic Layer)
@@ -87,7 +95,7 @@ class ElectionService {
         if (doc.exists) {
           const data = doc.data();
           const lastUpdated = data.lastUpdated ? data.lastUpdated.toDate().getTime() : 0;
-          
+
           if (now - lastUpdated < oneWeek) {
             console.log('📦 [Cache] Serving from Firestore');
             this.updateMemoryCache(data.data, lastUpdated + oneWeek);
@@ -109,7 +117,7 @@ class ElectionService {
       const result = await vertexAI.getGenerativeModel({ model: modelName }).generateContent(prompt);
       const response = await result.response;
       const text = response.candidates[0].content.parts[0].text;
-      
+
       const jsonMatch = text.match(/\[.*\]/s);
       if (!jsonMatch) throw new Error('Invalid AI Output');
       const elections = JSON.parse(jsonMatch[0]);
@@ -121,7 +129,8 @@ class ElectionService {
         }).catch(err => this.handleFirestoreError(err, 'WRITE'));
       }
 
-      this.updateMemoryCache(elections, Date.now() + oneWeek);
+      const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+      this.updateMemoryCache(elections, Date.now() + ONE_WEEK_MS);
       return elections;
     } catch (err) {
       console.error('❌ [AI] Fetch failed:', err.message);
@@ -151,7 +160,8 @@ const electionService = new ElectionService();
  * 🚀 WEB SERVER
  */
 const app = express();
-app.use(helmet()); 
+app.use(helmet({ contentSecurityPolicy: false })); // Disabled CSP temporarily for Angular frontend routing
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 
@@ -173,6 +183,38 @@ app.post('/api/chat', async (req, res) => {
     console.error('❌ [Chat] Error:', error.message);
     res.status(500).json({ error: 'System error' });
   }
+});
+
+app.post('/api/speak-hindi', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: 'Text is required' });
+
+    // 1. Translate to Hindi
+    const [translation] = await translateClient.translate(text, 'hi');
+    
+    // 2. Convert to Speech
+    const request = {
+      input: { text: translation },
+      voice: { languageCode: 'hi-IN', name: 'hi-IN-Neural2-A' },
+      audioConfig: { audioEncoding: 'MP3' },
+    };
+
+    const [response] = await ttsClient.synthesizeSpeech(request);
+    
+    // 3. Send audio back as base64 string
+    const audioBase64 = Buffer.from(response.audioContent, 'binary').toString('base64');
+    res.json({ audio: audioBase64, translatedText: translation });
+  } catch (error) {
+    console.error('❌ [TTS/Translate] Error:', error.message);
+    res.status(500).json({ error: 'TTS/Translate System error' });
+  }
+});
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 const port = process.env.PORT || 3000;

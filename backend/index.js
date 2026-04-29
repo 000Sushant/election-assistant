@@ -213,11 +213,11 @@ app.post('/api/speak-hindi', async (req, res) => {
 
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, 'public')));
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Votika Server running on port ${port}`);
 });

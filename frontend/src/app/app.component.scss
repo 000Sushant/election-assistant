@@ -10,7 +10,7 @@
 .main-shell {
   display: flex;
   flex: 1;
-  height: calc(100vh - 80px); // Adjusted for taller header
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -94,5 +94,11 @@
 @media (max-width: 1000px) {
   .dashboard-sidebar {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-layout {
+    height: 100dvh;
   }
 }

@@ -2,8 +2,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   padding: 0 1.5rem;
-  height: 80px;
+  min-height: 80px;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   z-index: 100;
@@ -14,6 +15,7 @@
     align-items: center;
     gap: 0.8rem;
     min-width: 220px;
+    flex-shrink: 0;
 
     .logo-img.persona {
       height: 48px;
@@ -46,11 +48,13 @@
     background: #f8fafc;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
+    min-width: 0;
 
     .nav-stat {
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-width: max-content;
       .stat-label { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
       .stat-value { font-size: 0.9rem; color: #0f172a; font-weight: 800; }
     }
@@ -82,6 +86,7 @@
     gap: 0.6rem;
     min-width: 100px;
     justify-content: flex-end;
+    flex-shrink: 0;
     
     .status-dot {
       width: 8px;
@@ -95,6 +100,107 @@
       font-size: 0.75rem;
       font-weight: 700;
       color: #475569;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .main-header {
+    flex-wrap: wrap;
+    min-height: auto;
+    padding: 0.75rem 1rem;
+
+    .logo-container {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .header-center {
+      order: 3;
+      width: 100%;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .header-status {
+      min-width: auto;
+    }
+  }
+}
+
+@media (max-width: 560px) {
+  .main-header {
+    padding: 0.65rem 0.75rem;
+    gap: 0.75rem;
+
+    .logo-container {
+      gap: 0.65rem;
+
+      .logo-img.persona {
+        width: 42px;
+        height: 42px;
+      }
+
+      .title-group {
+        min-width: 0;
+
+        .app-title {
+          font-size: 1.05rem;
+        }
+
+        .app-subtitle {
+          font-size: 0.65rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 170px;
+        }
+      }
+    }
+
+    .header-center {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: stretch;
+      padding: 0.55rem;
+      border-radius: 8px;
+
+      .stat-divider {
+        display: none;
+      }
+
+      .nav-stat {
+        align-items: flex-start;
+        min-width: 0;
+        padding: 0.15rem 0.25rem;
+      }
+
+      .nav-portal-btn {
+        grid-column: 1 / -1;
+        justify-content: center;
+        min-height: 38px;
+        border-radius: 8px;
+      }
+    }
+
+    .header-status {
+      gap: 0.4rem;
+
+      .status-text {
+        font-size: 0.7rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 380px) {
+  .main-header {
+    .logo-container .title-group .app-subtitle {
+      display: none;
+    }
+
+    .header-status .status-text {
+      display: none;
     }
   }
 }

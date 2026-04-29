@@ -17,7 +17,6 @@ export interface UpcomingElection {
 })
 export class ChatService {
   private apiUrl = '/api';
-  
   // New: Channel to trigger messages from the dashboard
   private messageTrigger = new Subject<string>();
   messageTrigger$ = this.messageTrigger.asObservable();

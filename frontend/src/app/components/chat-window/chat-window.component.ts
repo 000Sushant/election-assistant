@@ -108,7 +108,14 @@ export class ChatWindowComponent implements OnInit {
           this.audioPlayingIndex = null;
         };
 
-        this.currentAudio.play();
+        this.currentAudio.onerror = (err) => {
+          console.error('Audio playback error:', err);
+          this.audioPlayingIndex = null;
+          this.audioLoadingIndex = null;
+          this.currentAudio = null;
+        };
+
+        await this.currentAudio.play();
         this.audioPlayingIndex = index;
       }
     } catch (err) {

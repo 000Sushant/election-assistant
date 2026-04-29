@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node --test test.js",
+    "coverage": "node --test --experimental-test-coverage test.js",
     "start": "node index.js"
   },
   "keywords": [],
